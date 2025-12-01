@@ -4,15 +4,9 @@ const INPUT_PATH: &str = "input.txt";
 
 fn main() {
     let res: u32 = read_input().fold((50,0), |(prev, sum), instr| {
-        //println!("({},{})", prev, sum);
-        let prev = find_code(prev, &instr);
-        let sum = if prev == 0 {
-            sum + 1
-        } else {
-            sum
-        };
-
-        (prev, sum)
+        let (prev, laps) = find_code(prev, &instr);
+        // println!("{}({},{})",instr ,prev, laps);
+        (prev, sum + laps)
     }).1;
 
     println!("the code is {}", res)
@@ -27,11 +21,25 @@ fn read_input() -> impl Iterator<Item = String> {
 }
 
 /// Read a line from the input and apply it to the prevoius state of safe knob
-fn find_code(prev: u32, instruction: &str) -> u32 {
-    let num: u32 = instruction[1..].parse::<u32>().expect("Failed to parse number from instruction") % 100;
-    (match instruction.chars().next().unwrap() {
-        'L' => prev + 100 - num,
-        'R' => prev + num,
+/// Returns the result of the rotation and the number of times it passes zero
+fn find_code(prev: u32, instruction: &str) -> (u32, u32) {
+    let num: u32 = instruction[1..].parse::<u32>().expect("Failed to parse number from instruction");
+
+    let full_laps = num / 100;
+    let num = num % 100;
+    match instruction.chars().next().unwrap() {
+        'L' => {
+            (
+                (prev + 100 - num) % 100,
+                if prev != 0 && num != 0 && num >= prev {full_laps + 1} else {full_laps}
+            )
+        },
+        'R' => {
+            (
+                (prev + num) % 100, 
+                if prev != 0 && num != 0 && num >= 100 - prev {full_laps + 1} else {full_laps}
+            )
+        },
         _ =>panic!("instruction not L or R")
-    }) % 100
+    }
 }
