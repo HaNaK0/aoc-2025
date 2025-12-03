@@ -1,9 +1,11 @@
 use std::{
+    collections::HashSet,
     fs::File,
     io::{BufRead, BufReader},
 };
 
 const INPUT_PATH: &str = "input.txt";
+const PRIMES: [usize; 9] = [2, 3, 5, 7, 11, 13, 17, 19, 23];
 
 fn main() {
     let input = read_input().next().unwrap();
@@ -29,32 +31,48 @@ fn read_input() -> impl Iterator<Item = String> {
 }
 
 fn check_range(begining: &str, end: &str) -> u128 {
-    if begining.len() % 2 == 1 && end.len() == begining.len() {
-        return 0;
-    }
-    println!("{}-{}", begining, end);
-
-    let end: u128 = end.parse().unwrap();
-    let begin_int: u128 = begining.parse().unwrap();
-    let upper_half = if begin_int < 10 {"1"} else {&begining[0..begining.len() / 2]};
-    let mut current_number_string = [upper_half, upper_half].join("");
     let mut res = 0;
+    assert!(end.len() < *PRIMES.last().unwrap());
+    let mut prev_checked: HashSet<u128> = HashSet::new();
 
-    while current_number_string
-        .parse::<u128>()
-        .expect("failed to parse current number")
-        <= end
-    {
-        let current_number = current_number_string.parse::<u128>().unwrap();
-        if current_number >= begining.parse::<u128>().unwrap() {
-            res += current_number;
+    for prime in PRIMES {
+        if prime > end.len() {
+            break;
         }
-        let new_half = current_number_string[0..current_number_string.len() / 2]
-            .parse::<u128>()
-            .unwrap()
-            + 1;
-        let new_half = new_half.to_string();
-        current_number_string = [new_half.as_str(), new_half.as_str()].join("");
+        if !begining.len().is_multiple_of(prime) && begining.len() == end.len() {
+            continue;
+        }
+
+        let mut current_half_number = if begining.len().is_multiple_of(prime) {
+            begining[0..begining.len() / prime].parse::<u128>().unwrap()
+        } else {
+            10_u128.pow((begining.len() / prime) as u32)
+        };
+
+        let end: u128 = end.parse().unwrap();
+        let begining: u128 = begining.parse().unwrap();
+
+        let mut current_number = create_number(current_half_number, prime);
+
+        while current_number <= end {
+            if current_number >= begining && !prev_checked.contains(&current_number) {
+                // println!("{current_number}");
+                res += current_number;
+                prev_checked.insert(current_number);
+            }
+
+            current_half_number += 1;
+            current_number = create_number(current_half_number, prime)
+        }
     }
+
     res
+}
+
+fn create_number(current_num: u128, prime: usize) -> u128 {
+    (0..prime)
+        .map(|_| current_num.to_string())
+        .collect::<String>()
+        .parse()
+        .unwrap()
 }
