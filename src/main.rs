@@ -7,7 +7,7 @@ use std::{
 
 const INPUT_PATH: &str = "input.txt";
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone)]
 struct Pos<T> {
     pub x: T,
     pub y: T,
@@ -24,7 +24,7 @@ where
 
 fn main() {
     // read the position of the paper rolls into a set
-    let rolls: HashSet<Pos<i32>> = read_input()
+    let mut rolls: HashSet<Pos<i32>> = read_input()
         .enumerate()
         .flat_map(move |(y, l)| {
             l.char_indices()
@@ -42,26 +42,38 @@ fn main() {
         .filter_map(|(c, p)| if c == '@' { Some(p) } else { None })
         .collect();
 
-    let res = rolls
-        .iter()
-        .map(|r| {
-            (-1..2)
-                .flat_map(|x| (-1..2).map(move |y| (x, y)))
-                .filter_map(|(x, y)| {
-                    if x != 0 || y != 0 {
-                        Some(Pos {
-                            x: r.x + x,
-                            y: r.y + y,
-                        })
-                    } else {
-                        None
-                    }
-                })
-                .filter(|p| rolls.contains(p))
-                .count()
-        })
-        .filter(|n| *n < 4)
-        .count();
+    let mut res = 0;
+
+    loop {
+        let rolls_removed: HashSet<Pos<i32>> = rolls
+            .iter()
+            .filter(|r| {
+                (-1..2)
+                    .flat_map(|x| (-1..2).map(move |y| (x, y)))
+                    .filter_map(|(x, y)| {
+                        if x != 0 || y != 0 {
+                            Some(Pos {
+                                x: r.x + x,
+                                y: r.y + y,
+                            })
+                        } else {
+                            None
+                        }
+                    })
+                    .filter(|p| rolls.contains(p))
+                    .count()
+                    < 4
+            })
+            .cloned()
+            .collect();
+
+        if rolls_removed.is_empty() {
+            break;
+        }
+        res += rolls_removed.len();
+
+        rolls = rolls.difference(&rolls_removed).cloned().collect()
+    }
 
     println!("amount of rolls:{}", res)
 }
