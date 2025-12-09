@@ -5,6 +5,7 @@ use std::{
 
 const INPUT_PATH: &str = "input.txt";
 
+#[derive(Clone)]
 struct Span {
     start: usize,
     end: usize,
@@ -19,6 +20,7 @@ impl Span {
         }
     }
 
+    #[allow(dead_code)]
     pub fn contains(&self, num: usize) -> bool {
         self.start <= num && self.end >= num
     }
@@ -41,6 +43,10 @@ impl Span {
             true
         }
     }
+
+    pub fn count(&self) -> usize {
+        self.end - self.start + 1
+    }
 }
 
 fn main() {
@@ -50,26 +56,21 @@ fn main() {
     let mut spans: Vec<Span> = Vec::new();
 
     while !line.is_empty() {
-        let new_span = Span::new(&line);
+        let mut new_spans = vec![];
+        let mut new_span = Span::new(&line);
 
-        let mut overlap = false;
-        for span in &mut spans {
-            if span.merge(&new_span) {
-                overlap = true;
-                break;
+        for span in &spans {
+            if !new_span.merge(span) {
+                new_spans.push(span.clone());
             }
         }
-        if !overlap {
-            spans.push(new_span);
-        }
+        new_spans.push(new_span);
+        spans = new_spans;
         line = input.next().unwrap();
     }
 
-    let res = input.filter(|l| {
-        let ingredient: usize = l.parse().expect("failed to parse ingredient");
-        spans.iter().any(|s| s.contains(ingredient))
-    }).count();
-    println!("result: {res}")
+    let res: usize = spans.iter().map(|s| s.count()).sum();
+    println!("result: {}", res)
 }
 
 /// Reads the input into a iterator returning Strings
