@@ -1,25 +1,43 @@
-use std::{fs::File, io::{BufRead, BufReader}};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 const INPUT_PATH: &str = "input.txt";
 
 fn main() {
     let lines: Vec<String> = read_input().collect();
 
-    let operators: Vec<&str> = lines.last().unwrap().split_whitespace().collect();
+    let operators: Vec<char> = lines.last().unwrap().chars().collect();
+    let mut results: Vec<u128> = vec![];
 
-    let results: Vec<u128> = lines[..lines.len() - 1].iter()
-        .map(|l| l.split_whitespace().map(|s| s.parse::<u128>().unwrap()).collect::<Vec<u128>>())
-        .reduce(|res, next| {
-            res.iter().zip(next.iter()).zip(operators.iter()).map(|((p, n), o)| {
-                match *o {
-                    "+" => p + n,
-                    "*" => p * n,
-                    _ => panic!("invalid operator")
-                }
-            }).collect()
-        }).unwrap();
+    let mut curent_numbers = vec![];
+    for i in (0..lines[0].len()).rev() {
+        let current_num = lines[0..lines.len() - 1]
+            .iter()
+            .map(|l| l.chars().nth(i).unwrap())
+            .filter(|c| c.is_ascii_digit())
+            .collect::<String>();
 
-    println!("{:?}", results.iter().sum::<u128>())
+        if !current_num.is_empty() {
+            curent_numbers.push(current_num.parse::<u128>().expect("failed to parse"));
+        } 
+
+        match operators[i] {
+            '+' => {
+                results.push(curent_numbers.iter().sum());
+                curent_numbers = vec![];
+            }
+            '*' => {
+                results.push(curent_numbers.into_iter().reduce(|p, n| p * n).unwrap());
+                curent_numbers = vec![];
+            }
+            _ => {}
+        }
+    }
+
+    println!("{:?}", results);
+    println!("{}", results.iter().sum::<u128>())
 }
 
 /// Reads the input into a iterator returning Strings
@@ -29,4 +47,3 @@ fn read_input() -> impl Iterator<Item = String> {
     let buf_read = BufReader::new(file);
     buf_read.lines().map(|r| r.expect("failed to read line"))
 }
-
